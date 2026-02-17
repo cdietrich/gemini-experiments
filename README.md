@@ -33,13 +33,13 @@ npm run cli chat
 ### Specify a Project Directory
 
 ```bash
-npm run cli chat --project /path/to/your/project
+npm run cli chat -- --project /path/to/your/project
 ```
 
 ### Resume Previous Session
 
 ```bash
-npm run cli chat --resume
+npm run cli chat -- --resume
 ```
 
 ### Run Demos

@@ -19,6 +19,43 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
   ]);
 }
 
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function generateContentWithRetry(
+  ai: GoogleGenAI,
+  params: any,
+  maxRetries: number = 3
+): Promise<any> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await ai.models.generateContent(params);
+    } catch (error: any) {
+      const errorMessage = error?.message || '';
+      const errorObj = error?.error || {};
+      const isRateLimit =
+        error?.status === 429 ||
+        errorMessage.includes('429') ||
+        errorObj.code === 429 ||
+        errorMessage.includes('RESOURCE_EXHAUSTED');
+
+      if (isRateLimit && attempt < maxRetries) {
+        console.log(chalk.yellow(`\n[Rate limit hit. Waiting 60 seconds before retry (${attempt + 1}/${maxRetries})...]`));
+        await sleep(60000);
+        continue;
+      }
+
+      lastError = error;
+      throw error;
+    }
+  }
+
+  throw lastError;
+}
+
 const SYSTEM_INSTRUCTION = `You are a coding assistant with access to file system tools. Be conservative and thorough:
 
 - Read relevant files before making changes
@@ -176,7 +213,7 @@ export class Agent {
       .join('\n\n');
 
     const summaryResponse = await withTimeout(
-      this.ai.models.generateContent({
+      generateContentWithRetry(this.ai, {
         model: this.settings.getModel(),
         contents: [{ role: 'user', parts: [{ text: `${SUMMARIZE_PROMPT}\n\n${summaryText}` }] }],
       }),
@@ -234,7 +271,7 @@ export class Agent {
         : SYSTEM_INSTRUCTION;
 
       const response = await withTimeout(
-        this.ai.models.generateContent({
+        generateContentWithRetry(this.ai, {
           model: this.settings.getModel(),
           contents: currentContents,
           config: {
