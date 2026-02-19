@@ -150,9 +150,11 @@ export const TOOL_DECLARATIONS: FunctionDeclaration[] = [
 ];
 
 export function createToolExecutor(projectDir: string) {
+  const projectRoot = path.resolve(projectDir);
   function resolvePath(relativePath: string): string {
-    const resolved = path.resolve(projectDir, relativePath);
-    if (!resolved.startsWith(projectDir)) {
+    const resolved = path.resolve(projectRoot, relativePath);
+    const rel = path.relative(projectRoot, resolved);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
       throw new Error('Path traversal not allowed');
     }
     return resolved;
@@ -253,7 +255,7 @@ export function createToolExecutor(projectDir: string) {
     try {
       const command = String(args.command);
       const output = execSync(command, {
-        cwd: projectDir,
+        cwd: projectRoot,
         timeout: COMMAND_TIMEOUT_MS,
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -265,9 +267,9 @@ export function createToolExecutor(projectDir: string) {
       const stderr = execErr.stderr || '';
       const message = execErr.message || '';
       if (output || stderr) {
-        return { output: `stdout:\n${output}\nstderr:\n${stderr}` };
+        return { error: `Command failed\nstdout:\n${output}\nstderr:\n${stderr}` };
       }
-      return { error: message };
+      return { error: `Command failed: ${message}` };
     }
   }
 

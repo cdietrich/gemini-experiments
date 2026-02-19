@@ -23,16 +23,29 @@ async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+interface GenerateContentParams {
+  model: string;
+  contents: Content[];
+  config?: {
+    tools?: Array<{ functionDeclarations: unknown[] }>;
+    systemInstruction?: string;
+  };
+}
+
+interface GenerateContentResponse {
+  text?: string;
+  functionCalls?: FunctionCall[];
+  candidates?: Array<{ content?: Content }>;
+}
+
 async function generateContentWithRetry(
   ai: GoogleGenAI,
-  params: any,
+  params: GenerateContentParams,
   maxRetries: number = 3
-): Promise<any> {
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+): Promise<GenerateContentResponse> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      return await ai.models.generateContent(params);
+      return await ai.models.generateContent(params as any);
     } catch (error: any) {
       const errorMessage = error?.message || '';
       const errorObj = error?.error || {};
@@ -42,18 +55,17 @@ async function generateContentWithRetry(
         errorObj.code === 429 ||
         errorMessage.includes('RESOURCE_EXHAUSTED');
 
-      if (isRateLimit && attempt < maxRetries) {
+      if (isRateLimit) {
         console.log(chalk.yellow(`\n[Rate limit hit. Waiting 60 seconds before retry (${attempt + 1}/${maxRetries})...]`));
         await sleep(60000);
         continue;
       }
 
-      lastError = error;
       throw error;
     }
   }
 
-  throw lastError;
+  return ai.models.generateContent(params as any);
 }
 
 const SYSTEM_INSTRUCTION = `You are a coding assistant with access to file system tools. Be conservative and thorough:
@@ -263,7 +275,7 @@ export class Agent {
       if (contextSize > MAX_CONTEXT_CHARS) {
         console.log(chalk.yellow(`\n[Context size ${contextSize} exceeds limit ${MAX_CONTEXT_CHARS}]`));
         currentContents = await this.summarizeToolCalls(currentContents);
-        this.history['history']['sessions'][this.history['history']['sessions'].length - 1]['messages'] = currentContents;
+        this.history.setCurrentSessionMessages(currentContents);
       }
 
       const systemInstruction = this.planMode

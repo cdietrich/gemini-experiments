@@ -20,6 +20,11 @@ public class FibonacciTest {
         Fibonacci.fibonacci(-1);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testOverflow() {
+        Fibonacci.fibonacci(93);
+    }
+
     @Test
     public void testLargeFibonacci() {
         // F(46) 

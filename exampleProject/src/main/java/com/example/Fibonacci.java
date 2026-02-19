@@ -1,9 +1,14 @@
 package com.example;
 
-public class Fibonacci {
+public final class Fibonacci {
+    private Fibonacci() {}
+
     public static long fibonacci(int n) {
         if (n < 0) {
             throw new IllegalArgumentException("n must be non-negative");
+        }
+        if (n > 92) {
+            throw new IllegalArgumentException("n must be 92 or less to avoid long overflow");
         }
         if (n <= 1) {
             return n;

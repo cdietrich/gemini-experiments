@@ -17,7 +17,11 @@ export class HistoryManager {
   private load(): History {
     if (fs.existsSync(this.historyPath)) {
       const content = fs.readFileSync(this.historyPath, 'utf-8');
-      return JSON.parse(content);
+      try {
+        return JSON.parse(content);
+      } catch (err) {
+        console.warn(`Invalid history JSON at ${this.historyPath}. Using empty history.`);
+      }
     }
     return { sessions: [] };
   }
@@ -64,6 +68,13 @@ export class HistoryManager {
   addMessage(message: Content): void {
     if (this.currentSession) {
       this.currentSession.messages.push(message);
+      this.save();
+    }
+  }
+
+  setCurrentSessionMessages(messages: Content[]): void {
+    if (this.currentSession) {
+      this.currentSession.messages = messages;
       this.save();
     }
   }

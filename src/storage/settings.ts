@@ -15,7 +15,11 @@ export class SettingsManager {
   private load(): Settings {
     if (fs.existsSync(this.settingsPath)) {
       const content = fs.readFileSync(this.settingsPath, 'utf-8');
-      return JSON.parse(content);
+      try {
+        return JSON.parse(content);
+      } catch (err) {
+        console.warn(`Invalid settings JSON at ${this.settingsPath}. Using defaults.`);
+      }
     }
     return {
       model: DEFAULT_MODEL,

@@ -1,6 +1,8 @@
 package com.example;
 
-public class Factorial {
+public final class Factorial {
+    private Factorial() {}
+
     public static long factorial(int n) {
         if (n < 0) {
             throw new IllegalArgumentException("n must be non-negative");
