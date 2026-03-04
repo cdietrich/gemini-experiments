@@ -49,6 +49,15 @@ function isTextAndToolFriendlyModel(model: ListableModel): boolean {
   return supportedActions.some(action => action.includes('generatecontent'));
 }
 
+function isPromptExitError(err: unknown): boolean {
+  const message = String(err ?? '');
+  return (
+    message.includes('User abort') ||
+    message.includes('ExitPromptError') ||
+    message.includes('SIGINT')
+  );
+}
+
 function showHelp(): void {
   console.log();
   console.log(chalk.bold('Available commands:'));
@@ -319,7 +328,7 @@ program
           console.log();
         }
       } catch (err) {
-        if (String(err).includes('User abort')) {
+        if (isPromptExitError(err)) {
           console.log(chalk.dim('\nGoodbye!'));
           break;
         }
@@ -328,4 +337,12 @@ program
     }
   });
 
-program.parse();
+program.parseAsync().catch((err) => {
+  if (isPromptExitError(err)) {
+    console.log(chalk.dim('\nGoodbye!'));
+    process.exit(0);
+  }
+
+  console.error(chalk.red('Fatal error:'), String(err));
+  process.exit(1);
+});
