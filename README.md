@@ -30,6 +30,12 @@ Get an API key from [Google AI Studio](https://aistudio.google.com/).
 npm run cli chat
 ```
 
+Inside chat, you can use slash commands like:
+
+- `/model <name>` to switch models
+- `/models` to list text + tool-call friendly models
+- `/help` to see all commands
+
 ### Specify a Project Directory
 
 ```bash

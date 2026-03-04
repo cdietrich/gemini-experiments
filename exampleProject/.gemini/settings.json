@@ -1,5 +1,5 @@
 {
-  "model": "gemini-3-flash-preview",
+  "model": "gemini-3.1-flash-lite-preview",
   "permissions": {
     "run_command": {
       "mode": "allow"

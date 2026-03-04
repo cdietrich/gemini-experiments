@@ -2,6 +2,7 @@
 import 'dotenv/config';
 import * as path from 'path';
 import { Command } from 'commander';
+import { GoogleGenAI } from '@google/genai';
 import chalk from 'chalk';
 import ora from 'ora';
 import { input, select } from '@inquirer/prompts';
@@ -13,6 +14,41 @@ import { runDemos } from './demos.js';
 
 const program = new Command();
 
+interface ListableModel {
+  name?: string;
+  displayName?: string;
+  supportedActions?: string[];
+}
+
+function normalizeModelName(name?: string): string {
+  if (!name) {
+    return '';
+  }
+  return name.startsWith('models/') ? name.slice('models/'.length) : name;
+}
+
+function isTextAndToolFriendlyModel(model: ListableModel): boolean {
+  const modelName = normalizeModelName(model.name).toLowerCase();
+  if (!modelName.startsWith('gemini-')) {
+    return false;
+  }
+
+  const excludedNameFragments = [
+    'image',
+    'audio',
+    'tts',
+    'embedding',
+    'veo',
+    'lyria',
+  ];
+  if (excludedNameFragments.some(fragment => modelName.includes(fragment))) {
+    return false;
+  }
+
+  const supportedActions = (model.supportedActions ?? []).map(action => action.toLowerCase());
+  return supportedActions.some(action => action.includes('generatecontent'));
+}
+
 function showHelp(): void {
   console.log();
   console.log(chalk.bold('Available commands:'));
@@ -21,6 +57,7 @@ function showHelp(): void {
   console.log(chalk.cyan('  /context') + '   - Show current context size');
   console.log(chalk.cyan('  /reset') + '     - Reset all permissions to ask mode');
   console.log(chalk.cyan('  /model <name>') + ' - Switch model (e.g., /model gemini-2.5-flash)');
+  console.log(chalk.cyan('  /models') + '    - List text + tool-call friendly models');
   console.log(chalk.cyan('  /help') + '      - Show this help message');
   console.log(chalk.cyan('  /exit') + '      - Exit the session');
   console.log();
@@ -190,6 +227,59 @@ program
                 const newModel = args[0];
                 settings.setModel(newModel);
                 console.log(chalk.green(`Model changed to: ${newModel}`));
+              }
+              break;
+            }
+
+            case 'models': {
+              const apiKey = process.env.GEMINI_API_KEY;
+              if (!apiKey) {
+                console.log(chalk.red('GEMINI_API_KEY not set. Add it to your environment or .env file.'));
+                break;
+              }
+
+              const spinner = ora('Fetching models...').start();
+
+              try {
+                const ai = new GoogleGenAI({ apiKey });
+                const pager = await ai.models.list({ config: { queryBase: true } });
+                const allModels: ListableModel[] = [];
+
+                for await (const model of pager) {
+                  allModels.push(model as ListableModel);
+                }
+
+                const filteredModels = allModels
+                  .filter(isTextAndToolFriendlyModel)
+                  .map(model => ({
+                    id: normalizeModelName(model.name),
+                    displayName: model.displayName,
+                  }))
+                  .filter(model => model.id.length > 0)
+                  .sort((a, b) => a.id.localeCompare(b.id));
+
+                spinner.stop();
+
+                if (filteredModels.length === 0) {
+                  console.log(chalk.yellow('No text + tool-call friendly models found.'));
+                  break;
+                }
+
+                const currentModel = settings.getModel();
+                console.log();
+                console.log(chalk.bold('Models (text + tool-call friendly):'));
+                for (const model of filteredModels) {
+                  const currentSuffix = model.id === currentModel ? chalk.green(' (current)') : '';
+                  const displayName = model.displayName && model.displayName !== model.id
+                    ? chalk.dim(` - ${model.displayName}`)
+                    : '';
+                  console.log(chalk.cyan(`  ${model.id}`) + currentSuffix + displayName);
+                }
+                console.log();
+                console.log(chalk.dim('Use /model <name> to switch models.'));
+              } catch (err) {
+                spinner.stop();
+                console.log(chalk.red('Failed to list models:'), String(err));
               }
               break;
             }
