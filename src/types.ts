@@ -45,7 +45,7 @@ export interface PermissionResponse {
   alwaysAllow: boolean;
 }
 
-export const DEFAULT_MODEL = 'gemini-3-flash-preview';
+export const DEFAULT_MODEL = 'gemini-3.6-flash';
 export const MAX_HOPS = 25;
 export const COMMAND_TIMEOUT_MS = 60000;
 export const API_TIMEOUT_MS = 600000;

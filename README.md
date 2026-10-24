@@ -98,7 +98,7 @@ Permissions are stored in `.gemini/settings.json`:
 
 ```json
 {
-  "model": "gemini-3-flash-preview",
+  "model": "gemini-3.6-flash",
   "permissions": {
     "read_file": { "mode": "allow" },
     "write_file": { "mode": "allow" }

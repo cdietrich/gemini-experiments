@@ -65,7 +65,7 @@ function showHelp(): void {
   console.log(chalk.cyan('  /clear') + '     - Clear conversation history and start fresh');
   console.log(chalk.cyan('  /context') + '   - Show current context size');
   console.log(chalk.cyan('  /reset') + '     - Reset all permissions to ask mode');
-  console.log(chalk.cyan('  /model <name>') + ' - Switch model (e.g., /model gemini-2.5-flash)');
+  console.log(chalk.cyan('  /model <name>') + ' - Switch model (e.g., /model gemini-3.6-flash)');
   console.log(chalk.cyan('  /models') + '    - List text + tool-call friendly models');
   console.log(chalk.cyan('  /help') + '      - Show this help message');
   console.log(chalk.cyan('  /exit') + '      - Exit the session');
@@ -231,7 +231,7 @@ program
               if (args.length === 0) {
                 console.log(chalk.dim(`Current model: ${settings.getModel()}`));
                 console.log(chalk.dim('Usage: /model <model-name>'));
-                console.log(chalk.dim('Examples: gemini-2.5-flash, gemini-3-flash-preview'));
+                console.log(chalk.dim('Examples: gemini-3.6-flash, gemini-3.8-flash, gemini-4-argon'));
               } else {
                 const newModel = args[0];
                 settings.setModel(newModel);
