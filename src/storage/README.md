@@ -18,7 +18,7 @@ const settings = new SettingsManager(projectDir);
 
 // Get/set model
 settings.getModel();
-settings.setModel('gemini-3-flash-preview');
+settings.setModel('gemini-3.6-flash');
 
 // Check permissions
 settings.isAllowed('write_file'); // boolean
